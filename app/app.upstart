@@ -1,0 +1,16 @@
+description 'nodejs upstart script'
+author 'Ross Kukulinski <rossk@labs.asti-usa.com>'
+
+start on (local-filesystems and net-device-up)
+stop on shutdown
+
+# respawn the job up to 10 times within a 20 second period.
+# If the job exceeds these values, it will be stopped and
+# marked as failed.
+respawn
+respawn limit 10 20
+
+script
+   NODE_PATH=/usr/lib/nodejs:/usr/lib/node_modules NODE_ENV=PRODUCTION /usr/bin/nodejs /root/app/server.js 2>&1 >> /var/log/node.log
+end script
+

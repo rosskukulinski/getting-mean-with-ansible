@@ -1,0 +1,32 @@
+---
+
+#- include: provision_digital_ocean.yml
+
+- hosts: production.app.*
+  user: root
+  gather_facts: True
+  tasks:
+    - name: Add production.app.* to inventory
+      add_host: name={{ inventory_hostname }}
+                group='production.app'
+                
+    - name: setfact
+      set_fact: http_ip={{ ansible_eth1["ipv4"]["address"] }}
+      
+  roles:
+    - common
+    - nodejs
+    - app
+
+- hosts: production.nginx.*
+  user: root
+  gather_facts: True
+  
+  tasks:
+    - name: Add production.nginx.* to inventory
+      add_host: name={{ inventory_hostname }}
+                group='production.nginx'
+      
+  roles: 
+    - common
+    - nginx

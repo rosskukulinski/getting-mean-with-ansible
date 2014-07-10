@@ -1,0 +1,5 @@
+- name: Install emacs
+  apt: name=emacs state=present
+
+- name: Install python-pycurl for ansible
+  apt: name=python-pycurl state=present

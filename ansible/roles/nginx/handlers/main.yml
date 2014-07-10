@@ -1,0 +1,11 @@
+---
+# Handler to handle DB tier notifications
+
+- name: restart nginx
+  service: name=nginx state=restarted enabled=yes
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+
+- name: reload rsyslog
+  service: name=rsyslog state=reloaded

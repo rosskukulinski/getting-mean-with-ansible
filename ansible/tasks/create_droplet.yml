@@ -1,0 +1,18 @@
+---
+- name: ensure droplet exists
+  digital_ocean: >
+      state=present
+      command=droplet
+      name={{ item.name }}
+      ssh_key_ids={{ default_key }}
+      size_id={{ item.size|default(default_size) }}
+      region_id={{ item.region|default(default_region) }}
+      image_id={{ item.image|default(default_image) }}
+      private_networking=yes
+      wait_timeout=500
+      unique_name=true
+  register: droplet
+  with_items: droplets
+
+#- debug: msg="IP is {{ item.droplet.ip_address }}, Private IP is {{ item.droplet.private_ip_address }}"
+#  with_items: droplet.results

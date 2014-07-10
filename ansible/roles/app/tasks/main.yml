@@ -1,0 +1,21 @@
+- name: Copy app to file system
+  copy: src=../files/app.tar.tgz dest=/tmp/app.tar.gz
+  register: app_changed
+  
+- name: Extract app to filesystem
+  command: tar xf /tmp/app.tar.gz -C /root/
+  when: app_changed|changed
+
+- name: "Restart example Node.js app."
+  command: forever start /root/dist/server.js
+  when: app_changed|changed
+
+- name: "Check list of Node.js apps running."
+  command: forever list
+  register: forever_list
+  changed_when: false
+
+- name: "Start example Node.js app."
+  command: forever start /root/dist/server.js
+  when: "forever_list.stdout.find('/root/dist/server.js') == -1"
+  

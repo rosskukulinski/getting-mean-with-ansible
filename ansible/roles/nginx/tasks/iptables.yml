@@ -1,0 +1,46 @@
+- name: Ensure iptables-persistent is installed
+  apt: package=iptables-persistent state=installed
+  tags: 
+    - iptables
+
+- name: Copy iptables file to tmp
+  template: src=iptables.conf.j2 dest=/tmp/iptables.conf
+  register: iptables_changed
+  tags: 
+    - iptables
+    - verify
+
+- name: Load iptables rules if changed
+  shell: /sbin/iptables-restore < /tmp/iptables.conf
+  when: iptables_changed|changed
+  tags: 
+    - iptables
+    - verify
+
+- name: Save iptables rules if changed
+  shell: /sbin/iptables-save > /etc/iptables/rules.v4
+  when: iptables_changed|changed
+  tags: 
+    - iptables
+    - verify 
+
+- name: Copy ip6tables file to root
+  template: src=ip6tables.conf.j2 dest=/tmp/ip6tables.conf
+  register: ip6tables_changed
+  tags: 
+    - iptables
+    - verify
+
+- name: Load ip6tables rules if changed
+  shell: /sbin/ip6tables-restore < /tmp/ip6tables.conf
+  when: ip6tables_changed|changed
+  tags: 
+    - iptables
+    - verify
+
+- name: Save ip6tables rules if changed
+  shell: /sbin/ip6tables-save > /etc/iptables/rules.v6
+  when: ip6tables_changed|changed
+  tags: 
+    - iptables
+    - verify
