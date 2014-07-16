@@ -1,5 +1,2 @@
 [local]
 localhost ansible_connection=local
-
-#[production.nginx]
-#production.nginx.*

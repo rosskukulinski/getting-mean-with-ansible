@@ -1,0 +1,4 @@
+---
+db_name: "node-todo"
+db_user: "node-todo"
+db_password: "super_secure"

@@ -2,15 +2,15 @@
 upstream static  {
   least_conn;
   {% for host in groups['production.app'] %}
-    server {{ hostvars[host]['http_ip'] }}:9000 max_fails=1  fail_timeout=15s;
+    server {{ hostvars[host]['http_ip'] }}:8080 max_fails=1  fail_timeout=15s;
   {% endfor %}
 }
 
 server {
   listen 80;
-  
+
   location / {
-  
+
     gzip on;
     gzip_comp_level 6;
     gzip_vary on;
@@ -18,7 +18,7 @@ server {
     gzip_proxied any;
     gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript;
     gzip_buffers 16 8k;
-  
+
     proxy_pass http://static/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;

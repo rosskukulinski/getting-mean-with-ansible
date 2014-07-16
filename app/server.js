@@ -1,25 +1,23 @@
-'use strict';
+// set up ======================================================================
+var express  = require('express');
+var app      = express(); 								// create our app w/ express
+var mongoose = require('mongoose'); 					// mongoose for mongodb
+var port  	 = process.env.PORT || 8080; 				// set the port
+var database = require('./config/database'); 			// load the database config
 
-var express = require('express');
+// configuration ===============================================================
+mongoose.connect(database.url); 	// connect to mongoDB database
 
-/**
- * Main application file
- */
-
-// Set default node environment to development
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-
-var config = require('./lib/config/config');
-
-// Setup Express
-var app = express();
-require('./lib/config/express')(app);
-require('./lib/routes')(app);
-
-// Start server
-app.listen(config.port, config.ip, function () {
-  console.log('Express server listening on %s:%d, in %s mode', config.ip, config.port, app.get('env'));
+app.configure(function() {
+	app.use(express.static(__dirname + '/public')); 		// set the static files location /public/img will be /img for users
+	app.use(express.logger('dev')); 						// log every request to the console
+	app.use(express.bodyParser()); 							// pull information from html in POST
+	app.use(express.methodOverride()); 						// simulate DELETE and PUT
 });
 
-// Expose app
-exports = module.exports = app;
+// routes ======================================================================
+require('./app/routes.js')(app);
+
+// listen (start app with node server.js) ======================================
+app.listen(port);
+console.log("App listening on port " + port);

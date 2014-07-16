@@ -1,14 +1,14 @@
 - name: Copy app to file system
-  copy: src=../files/app.tar.tgz dest=/tmp/app.tar.gz
+  copy: src=../files/app.tar.gz dest=/tmp/app.tar.gz
   register: app_changed
-  
+
 - name: Extract app to filesystem
   command: tar xf /tmp/app.tar.gz -C /root/
   when: app_changed|changed
 
-- name: "Restart example Node.js app."
-  command: forever start /root/dist/server.js
-  when: app_changed|changed
+- name: Update database configuration
+  template: src=database.tmpl dest=/root/app/config/database.js
+  tags: db
 
 - name: "Check list of Node.js apps running."
   command: forever list
@@ -16,6 +16,10 @@
   changed_when: false
 
 - name: "Start example Node.js app."
-  command: forever start /root/dist/server.js
-  when: "forever_list.stdout.find('/root/dist/server.js') == -1"
-  
+  command: forever start /root/app/server.js
+  when: "forever_list.stdout.find('/root/app/server.js') == -1"
+  register: just_started
+
+- name: "Restart example Node.js app."
+  command: forever restart 0
+  when: app_changed|changed and not just_started

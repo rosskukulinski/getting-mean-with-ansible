@@ -1,0 +1,6 @@
+module.exports = {
+
+        // the database url to connect
+        url : 'mongodb://{%- for host in groups['production.mongodb'] -%}{{ hostvars[host]['db_ip'] }}
+        {%- if loop.first -%}/{{db_name}}{% endif %}{%- if loop.length > 1 and not loop.last -%},{% endif %}{% endfor %}'
+}

@@ -1,0 +1,35 @@
+---
+
+- name: Import the public key
+  command: sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+
+- name: Create a save dir
+  file: path={{mongo_dbpath}} state=directory
+
+- name: Create a list file for MongoDB
+  file: path=/etc/apt/sources.list.d/mongodb.list state=touch
+
+- name: Add repo to list
+  lineinfile: dest=/etc/apt/sources.list.d/mongodb.list line="deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen"
+
+- name: Install mongodb-org
+  apt: pkg=mongodb-org state=present update_cache=yes
+
+- name: CHOWN dir
+  file: path={{mongo_path}} owner=mongodb group=mongodb state=directory recurse=yes
+
+- name: Copy the mongod conf file
+  template: src=mongod.conf.j2 dest=/etc/mongod.conf
+  notify: restart mongodb
+
+- name: Install python-dev
+  apt: pkg=python-dev state=present
+
+- name: Install python-pip
+  apt: pkg=python-pip state=present
+
+- name: Install pymongo
+  pip: name=pymongo
+
+#- name: configure mongodb
+#  mongodb_user: database={{db_name}} name={{db_user}} password={{db_password}} roles='readWrite' state=present

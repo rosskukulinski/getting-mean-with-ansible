@@ -1,32 +1,67 @@
 ---
 
-#- include: provision_digital_ocean.yml
+- include: provision_digital_ocean.yml tags=db
 
+###############  MongoDB Configuration   #####################
+
+- hosts: production.mongodb.*
+  user: root
+  gather_facts: True
+
+  vars_files:
+    - vars/database.yml
+
+  tasks:
+    # - name: Add production.mongodb.* to inventory
+    #   add_host: name={{ inventory_hostname }}
+    #             group='production.mongodb'
+
+    - name: Add production.mongodb.* to inventory
+      group_by: key="production.mongodb"
+
+    - name: setfact
+      set_fact: db_ip={{ ansible_eth1["ipv4"]["address"] }}
+
+  roles:
+    - common
+    - mongodb
+
+###############  NodeJS Todo App Configuration   #####################
 - hosts: production.app.*
   user: root
   gather_facts: True
+  vars_files:
+    - vars/database.yml
+
   tasks:
+    # - name: Add production.app.* to inventory
+    #   add_host: name={{ inventory_hostname }}
+    #             group='production.app'
+
     - name: Add production.app.* to inventory
-      add_host: name={{ inventory_hostname }}
-                group='production.app'
-                
+      group_by: key="production.app"
+
     - name: setfact
       set_fact: http_ip={{ ansible_eth1["ipv4"]["address"] }}
-      
+
   roles:
     - common
     - nodejs
     - app
 
+###############  Nginx Configuration   #####################
 - hosts: production.nginx.*
   user: root
   gather_facts: True
-  
+
   tasks:
+    # - name: Add production.nginx.* to inventory
+    #   add_host: name={{ inventory_hostname }}
+    #             group='production.nginx'
+
     - name: Add production.nginx.* to inventory
-      add_host: name={{ inventory_hostname }}
-                group='production.nginx'
-      
-  roles: 
+      group_by: key="production.nginx"
+
+  roles:
     - common
     - nginx

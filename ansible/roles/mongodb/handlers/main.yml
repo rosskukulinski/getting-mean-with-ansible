@@ -1,0 +1,6 @@
+---
+# Handler to handle DB tier notifications
+
+- name: restart mongodb
+  service: name=mongod state=restarted enabled=yes
+
