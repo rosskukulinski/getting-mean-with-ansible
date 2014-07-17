@@ -13,11 +13,3 @@
       unique_name=true
   register: droplet
   with_items: droplets
-
-# - name: Add all droplets to dynamic inventory groups
-#   add_host: name={{ inventory_hostname }} group={{ item.group }}
-#   with_items: droplets
-
-
-#- debug: msg="IP is {{ item.droplet.ip_address }}, Private IP is {{ item.droplet.private_ip_address }}"
-#  with_items: droplet.results

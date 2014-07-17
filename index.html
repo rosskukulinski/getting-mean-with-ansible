@@ -74,18 +74,22 @@
 			</section>
 
 			<section>
+				<h1>Quick Ansible Tutorial</h1>
+			</section>
+
+			<section>
 				<h2>Plays (and Roles)</h2>
 				<pre><code data-trim style="font-size: 16px">
 - name: Add nginx apt repo
-	apt_repository: repo='ppa:chris-lea/nginx-devel' state=present update_cache=yes
+  apt_repository: repo='ppa:chris-lea/nginx-devel' state=present update_cache=yes
 
 - name: Install the nginx packages
-	apt: name=nginx state=present update_cache=yes
-	notify: restart nginx
+  apt: name=nginx state=present update_cache=yes
+  notify: restart nginx
 
 - name: Copy the nginx sites file
-	template: src=default.j2 dest=/etc/nginx/sites-available/default
-	notify: reload nginx
+  template: src=default.j2 dest=/etc/nginx/sites-available/default
+  notify: reload nginx
 
 - include: iptables.yml
 				</code></pre>
@@ -125,7 +129,58 @@
 			</section>
 
 			<section>
-				<h1>Dynamic Inventory!</h1>
+				<h1>Ok, onto 'real' stuff</h1>
+			</section>
+
+			<section>
+				<h2>Let's create VMs on Digitial Ocean</h2>
+				provision_digital_ocean.yml
+<pre><code data-trim>
+---
+- hosts: localhost
+  gather_facts: False
+
+  vars_files:
+    - vars/keys.yml
+    - vars/droplets.yml
+
+  tasks:
+    - include: tasks/create_droplet.yml droplets={{droplets}}
+
+</code></pre>
+</section>
+
+<section>
+	<h2>droplets.yml</h2>
+	<pre><code data-trim>
+---
+droplets:
+  - name: production.nginx.1
+  - name: production.app.1
+  - name: production.mongodb.1
+
+</code></pre>
+</section>
+
+			<section>
+				<h2>create_droplet.yml</h2>
+				<pre><code data-trim>
+---
+- name: ensure droplet exists
+  digital_ocean: >
+    state=present
+    command=droplet
+    name={{ item.name }}
+    ssh_key_ids={{ default_key }}
+    size_id={{ item.size|default(default_size) }}
+    region_id={{ item.region|default(default_region) }}
+    image_id={{ item.image|default(default_image) }}
+    private_networking=yes
+    wait_timeout=500
+    unique_name=true
+  register: droplet
+  with_items: droplets
+</code></pre>
 			</section>
 
 			<section>
@@ -134,6 +189,126 @@
 			</section>
 
 
+			<section>
+				<h1>Dynamic Inventory!</h1>
+				<img src="slides/img/hosts.png" width=500><br>
+<pre><code data-trim>
+ansible-playbook -i hosts site.yml
+</code></pre>
+			</section>
+
+
+<section>
+	<h2>This becomes our Inventory</h2>
+	<img src="slides/img/do_droplets.png">
+</section>
+
+<section>
+	<h2>Putting it all together</h2>
+</section>
+
+			<section>
+				<h2>site.yml (1/3)</h2>
+				<pre><code data-trim>
+- include: provision_digital_ocean.yml
+#  MongoDB Configuration
+- hosts: production.mongodb.*
+  user: root
+  vars_files:
+    - vars/database.yml
+  tasks:
+    - name: Add production.mongodb.* to inventory
+      group_by: key="production.mongodb"
+    - name: setfact
+      set_fact: db_ip={{ ansible_eth1["ipv4"]["address"] }}
+  roles:
+    - common
+    - mongodb
+
+</code></pre>
+</section>
+
+
+			<section>
+				<h2>site.yml (2/3)</h2>
+				<pre><code data-trim>
+#  NodeJS Todo App Configuration
+- hosts: production.app.*
+  user: root
+  vars_files:
+    - vars/database.yml
+  tasks:
+    - name: Add production.app.* to inventory
+      group_by: key="production.app"
+    - name: setfact
+      set_fact: http_ip={{ ansible_eth1["ipv4"]["address"] }}
+  roles:
+    - common
+    - nodejs
+    - app
+</code></pre>
+</section>
+
+<section>
+	<h2>NodeJS DB Connection</h2>
+	<pre><code data-trim>
+module.exports = {
+  // the database url to connect
+  url : 'mongodb://
+    {%- for host in groups['production.mongodb'] -%}
+      {{ hostvars[host]['db_ip'] }}
+        {%- if loop.first -%}
+          /{{db_name}}
+        {% endif %}
+        {%- if loop.length > 1 and not loop.last -%}
+          ,
+        {% endif %}
+    {% endfor %}';
+}
+// url : 'mongodb://10.128.190.31/node-todo,10.128.190.11,10.112.232.11'
+</code></pre>
+</section>
+
+<section>
+	<h2>site.yml (3/3)</h2>
+	<pre><code data-trim>
+#  Nginx Configuration
+- hosts: production.nginx.*
+  user: root
+  tasks:
+    - name: Add production.nginx.* to inventory
+      group_by: key="production.nginx"
+  roles:
+    - common
+    - nginx
+</code></pre>
+</section>
+
+<section>
+	<h2>nginx site</h2>
+	<pre><code data-trim>
+# Simple Load Balancer
+upstream static  {
+  least_conn;
+  {% for host in groups['production.app'] %}
+    server {{ hostvars[host]['http_ip'] }}:8080;
+  {% endfor %}
+}
+server {
+  listen 80;
+  location / {
+    proxy_pass http://static/;
+    proxy_http_version 1.1;
+    proxy_next_upstream error timeout;
+  }
+}
+	</code></pre>
+</section>
+
+<section>
+	<h2>Demo!</h2>
+	<a href="http://107.170.97.37" target="_blank">http://107.170.97.37</a>
+</section>
 
 			<section>
 				<h2>References</h2>
