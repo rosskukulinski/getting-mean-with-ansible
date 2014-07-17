@@ -1,10 +1,5 @@
 ---
 droplets:
   - name: production.nginx.1
-    group: production.nginx
   - name: production.app.1
-    group: production.app
-  - name: production.app.2
-    group: production.app
   - name: production.mongodb.1
-    group: production.mongodb

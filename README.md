@@ -14,3 +14,11 @@ Code and Slides for Deploying a MEAN stack application to Digital Ocean using An
 sudo easy_install pip
 pip install dopy
 ```
+
+
+You also need to set a couple of environment variables for the Digital Ocean API.
+
+```
+export DO_API_KEY=xxxxxxxxxxxxxxx
+export DO_CLIENT_ID=xxxxxxxxxxxxxxxxxx
+```
