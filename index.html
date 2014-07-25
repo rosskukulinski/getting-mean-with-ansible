@@ -33,33 +33,88 @@
 		<div class="slides">
 			<section>
 				<h2>Getting MEAN with Ansible</h2>
-				<h2>and Digital Ocean</h2>
 				<p>
 				<a href="http://twitter.com/rosskukulinski">@RossKukulinski</a><br>
-				<a href='http://speakit.io'>SpeakIt.io Co-Founder</a><br>
-				<a href='http://www.meetup.com/BayNode/'>BayNode Meetup</a>
+				<a href='http://speakit.io'>SpeakIt.io Co-Founder</a><br><br>
+				<a href='http://www.meetup.com/BayNode/'>BayNode Talk Night</a><br>
+                July 24, 2014
 				</p>
 			</section>
-
-			<section>
+          
+            <section>
 				<h2>Warmup: Raise your hand if...</h2>
 				<ul>
-					<li class="fragment">This is your first time learning about Ansible</li>
-					<li class="fragment">You have tried Ansible</li>
-					<li class="fragment">You have used Ansible in production</li>
-					<li class="fragment">You could be up here talking about Ansible</li>
-				</ul>
-			</section>
-
-			<section>
-				<h2>Warmup 2: Raise your hand if...</h2>
-				<ul>
-					<li class="fragment">You've never heard of MEAN <br>
+					<li class="fragment">You've never heard of the MEAN stack<br>
 						(hint: MongoDB, ExpressJS, AngularJS, NodeJS)</li>
-					<li class="fragment">You have used NodeJS</li>
-					<li class="fragment">You have used Ansible to deploy NodeJS or MongoDB</li>
+                    <li class="fragment">You've never heard of Ansible</li>
+                    <li class="fragment">You've never heard of configuration management tools <br>
+                        (i.e. Salt, Puppet, Chef, Ansible)</li>
+                    
 				</ul>
 			</section>
+          
+            <section>
+              <h2>Deploying Node</h2>
+              <h3>Platform as a Service</h3>
+              
+              <img src="slides/img/heroku-logo.jpg" height=100px>
+              <pre><code>$ git push heroku master</code></pre>
+              
+              <img src="slides/img/nodejitsu-logo.png" height=100px>
+              <pre><code>$ jitsu deploy</code></pre>
+            </section>
+          
+            <section>
+              <h3>PaaS Benefits</h3>
+              <ul>
+                <li>"Cheap"</li>
+                <li>Simple deploy</li>
+                <li>Integrations with DB PaaS (MongoHQ, Redis To Go, etc.)</li>
+                <li>Nodejitsu / Heroku handle scaling your application</li>
+              </ul>
+            </section>
+          
+            <section>
+              <h3>PaaS Downsides</h3>
+              <ul>
+                <li>performance limitations</li>
+                <li>npm downtime</li>
+                <li>vendor lock-in</li>
+                <li>limited custom architectures</li>
+                <li style="color:red">loss of control</li>
+              </ul>
+            </section>
+          
+            <section>
+              <h2>Custom Deployment</h2>
+              <h3>We need some servers</h3>
+              <ul>
+                <li>AWS</li>
+                <li>Rackspace</li>
+                <li>Joyent</li>
+                <li>Digital Ocean</li>
+                <li>Co-Lo</li>
+              </ul>
+            </section>
+          
+            <section>
+              <h3>Servers need to be setup</h3>
+              <ul>
+                <li>Manually</li>
+                <li>Bash scripts</li>
+                <li>Configuration Management Tools</li>
+              </ul>
+            </section>
+          
+            <section>
+              <h3>Configuration Management Tools</h3>
+              <ul>
+                <li>Puppet</li>
+                <li>Chef</li>
+                <li>Salt</li>
+                <li style="color: green"><b>Ansible</b></li>
+              </ul>
+            </section>
 
 			<section>
 				<h1>Ansible</h1>
@@ -72,26 +127,63 @@
 				<br/>
 				<h3>Orchestration Engine</h3>
 			</section>
+          
+            <section>
+              <blockquote>
+                &ldquo;Ansible is infrastructure as data<br>
+                (as opposed to infrastructure as code)&rdquo;
+              </blockquote>
+            </section>
+          
+            <section>
+              <h3>Why we picked Ansible</h3>
+              <ul>
+                <li>Easy to learn</li>
+                <li>Tons of built-in modules</li>
+                <li>Python under the hood (no Ruby for us)</li>
+                <li>Uses existing SSH infrastructure</li>
+                <li>Idempotent</li>
+              </ul>
+            </section>
+          
+            <section>
+              <h2>Continous Integration</h2>
+              <h3>With Jenkins</h3>
+              <ul>
+                <li>Pulls changes from GitHub</li>
+                <li>Runs tests</li>
+                <li>Builds Debian packages</li>
+                <li>Archives build artifacts</li>
+                <li>Runs Ansible deploy playbooks</li>
+              </ul>
+            </section>
+          
+            <section>
+              <h2>What are we deploying?</h2>
+              <h3>In this example...</h3>
+              <ul>
+                <li>MongoDB Server</li>
+                <li>2 (or more) NodeJS 'ToDo App' Servers</li>
+                <li>Nginx Server for load balancing</li>
+              </ul>
+            </section>
 
 			<section>
 				<h1>Quick Ansible Tutorial</h1>
 			</section>
 
 			<section>
-				<h2>Plays (and Roles)</h2>
+				<h2>Play to install NodeJS</h2>
 				<pre><code data-trim style="font-size: 16px">
-- name: Add nginx apt repo
-  apt_repository: repo='ppa:chris-lea/nginx-devel' state=present update_cache=yes
+- name: Add node apt repo
+  apt_repository: repo='ppa:chris-lea/node.js' state=present update_cache=yes
 
-- name: Install the nginx packages
-  apt: name=nginx state=present update_cache=yes
-  notify: restart nginx
+- name: Install node
+  apt: pkg=nodejs state=present
 
-- name: Copy the nginx sites file
-  template: src=default.j2 dest=/etc/nginx/sites-available/default
-  notify: reload nginx
-
-- include: iptables.yml
+- name: Install global packages
+  npm: global=yes name={{ item }} state=present
+  with_items: nodejs_global_packages
 				</code></pre>
 			</section>
 
@@ -205,9 +297,33 @@ ansible-playbook -i hosts site.yml
 
 <section>
 	<h2>Putting it all together</h2>
+    <h3>Lets look at the code...</h3>
 </section>
+			
 
 			<section>
+				<h2>References</h2>
+					<a href="https://github.com/garethr/ansible-provisioner">https://github.com/garethr/ansible-provisioner</a><br>
+					<a href="https://github.com/scotch-io/node-todo/tree/tut1-starter">https://github.com/scotch-io/node-todo/tree/tut1-starter</a><br>
+					<a href="https://github.com/rosskukulinski/getting-mean-with-ansible">https://github.com/rosskukulinski/getting-mean-with-ansible</a>
+					<p>
+						Special thanks to <a href="https://twitter.com/jareddlc">@jareddlc</a>
+					</p>
+			</section>
+
+			<section>
+					<h1>Thanks!</h1>
+					<a href="http://kukulinski.com">Ross Kukulinski</a><br>
+					<a href="http://twitter.com/rosskukulinski">@rosskukulinski</a><br>
+					<a href='https://speakit.io'>ross _at_ SpeakIt.io</a>
+
+			</section>
+          
+          <section>
+            <h3>Reference slides w/ code copypasta</h3>
+          </section>
+          
+          <section>
 				<h2>site.yml (1/3)</h2>
 				<pre><code data-trim>
 - include: provision_digital_ocean.yml
@@ -304,29 +420,6 @@ server {
 }
 	</code></pre>
 </section>
-
-<section>
-	<h2>Demo!</h2>
-	<a href="http://107.170.97.37" target="_blank">http://107.170.97.37</a>
-</section>
-
-			<section>
-				<h2>References</h2>
-					<a href="https://github.com/garethr/ansible-provisioner">https://github.com/garethr/ansible-provisioner</a><br>
-					<a href="https://github.com/scotch-io/node-todo/tree/tut1-starter">https://github.com/scotch-io/node-todo/tree/tut1-starter</a><br>
-					<a href="https://github.com/rosskukulinski/getting-mean-with-ansible">https://github.com/rosskukulinski/getting-mean-with-ansible</a>
-					<p>
-						Special thanks to <a href="https://twitter.com/jareddlc">@jareddlc</a>
-					</p>
-			</section>
-
-			<section>
-					<h1>Thanks!</h1>
-					<a href="http://kukulinski.com">Ross Kukulinski</a><br>
-					<a href="http://twitter.com/rosskukulinski">@rosskukulinski</a><br>
-					<a href='http://speakit.io'>ross _at_ SpeakIt.io</a>
-
-			</section>
 
 
 		</div>
